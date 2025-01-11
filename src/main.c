@@ -12,14 +12,33 @@ void error(char *msg) {
 	exit(EXIT_FAILURE);
 }
 
-void read_response(int client_fd) {
+char *read_response(int client_fd) {
 	char buffer[1024] = "";
 	memset(buffer, 0, sizeof(buffer));
 	int bytes_received;
+	char *response = NULL;
+	int response_lenght = 0;
+
 
 	while ((bytes_received = recv(client_fd, buffer, sizeof(buffer), 0)) > 0) {
 		buffer[bytes_received] = '\0';
-		printf("[*] Client: \n%s\n", buffer);
+		if (response == NULL) {
+			response = malloc(bytes_received + 1);
+			if (response == NULL) {
+				perror("[!] Error malloc");
+				return NULL;
+			}
+			memcpy(response, buffer, bytes_received);
+			response_lenght = bytes_received;
+		} else {
+			response = realloc(response, response_lenght + bytes_received + 1);
+			if (response == NULL) {
+				perror("[!] Error malloc");
+				return NULL;
+			}
+			memcpy(response + response_lenght, buffer, bytes_received);
+			response_lenght += bytes_received;
+		}
 
 		if (strstr(buffer, "\r\n\r\n") != NULL) {
 			break;
@@ -29,6 +48,22 @@ void read_response(int client_fd) {
 	if (bytes_received == 0) {
 		perror("[!] Error al leer datos del cliente");
 	}
+
+	if (response != NULL) {
+		response[response_lenght] = '\0';
+	}
+
+	return response;
+}
+
+char *get_route(char *request) {
+
+	char *request_splitted = strtok(request, "\n");
+	
+	strtok(request_splitted, " ");
+	char *path = strtok(NULL, " ");
+
+	return path;
 }
 
 int main() {
@@ -67,14 +102,38 @@ int main() {
 		}
 		printf("[*] Cliente conectado\n");
 
-		read_response(client_fd);
+		char *client_request = read_response(client_fd);
 
-		char response[] =
-			"HTTP/1.1 200 OK\r\n"
-			"Content-Type: text/plain\r\n"
-			"Content-Length: 5\r\n"
+		printf("[*] Response:\n%s\n", client_request);
+
+		char *route = get_route(client_request);
+		printf("[*] Route: %s\n", route);
+
+		char body[] = 
+			"<html lang='en'>"
+			"<head>"
+			"<metacharset='UTF-8'>"
+			"<metaname='viewport'content='width=device-width,initial-scale=1.0'>"
+			"<metahttp-equiv='X-UA-Compatible'content='ie=edge'>"
+			"<title>HTML5Boilerplate</title>"
+			"<linkrel='stylesheet'href='style.css'>"
+			"</head>"
+			"<body>"
+			"<h1>Hola</h1>"
+			"</body>"
+			"</html>";
+
+		int body_len = strlen(body);
+
+		char response[1024];
+
+		sprintf(response, "HTTP/1.1 200 OK\r\n"
+			"Content-Type: text/html\r\n"
+			"Content-Length: %d\r\n"
 			"\r\n"
-			"Hola";
+			"%s"
+			, body_len, body);
+
 		
 		if (send(client_fd, response, sizeof(response) - 1, 0) < 0) {
 			perror("[!] Error al enviar datos al cliente");
