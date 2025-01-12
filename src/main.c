@@ -1,10 +1,3 @@
-#include <stddef.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <unistd.h>
 #include "../include/server.h"
 
 void error(char *msg) {
@@ -18,7 +11,6 @@ char *read_response(int client_fd) {
 	int bytes_received;
 	char *response = NULL;
 	int response_lenght = 0;
-
 
 	while ((bytes_received = recv(client_fd, buffer, sizeof(buffer), 0)) > 0) {
 		buffer[bytes_received] = '\0';
@@ -104,30 +96,42 @@ int main() {
 
 		char *client_request = read_response(client_fd);
 
-		printf("[*] Response:\n%s\n", client_request);
+		printf("[*] Request:\n%s\n", client_request);
 
 		char *route = get_route(client_request);
 		printf("[*] Route: %s\n", route);
 
-		char body[] = 
-			"<html lang='en'>"
+		int body_len = 0;
+
+		body_len += strlen("<html lang='en'><head><metacharset='UTF-8'><metaname='viewport'content='width=device-width,initial-scale=1.0'><metahttp-equiv='X-UA-Compatible'content='ie=edge'><title>HTML5Boilerplate</title><linkrel='stylesheet'href='style.css'></head><body><h1>%s</h1></body></html>");
+		body_len += strlen(route);
+
+		char *body = (char *)malloc(body_len + 1);
+
+
+		snprintf(body, body_len, "<html lang='en'>"
 			"<head>"
 			"<metacharset='UTF-8'>"
 			"<metaname='viewport'content='width=device-width,initial-scale=1.0'>"
 			"<metahttp-equiv='X-UA-Compatible'content='ie=edge'>"
-			"<title>HTML5Boilerplate</title>"
-			"<linkrel='stylesheet'href='style.css'>"
+			"<title>Server HTTP</title>"
 			"</head>"
 			"<body>"
-			"<h1>Hola</h1>"
+			"<h1>%s</h1>"
 			"</body>"
-			"</html>";
+			"</html>"
+			, route);
 
-		int body_len = strlen(body);
 
-		char response[1024];
+		printf("body: %s\nbody_len: %d\n\n", body, body_len);
+		int response_len = 0;
 
-		sprintf(response, "HTTP/1.1 200 OK\r\n"
+		response_len += strlen("HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: %d\r\n\r\n");
+		response_len += body_len;
+
+		char *response = (char *)malloc(response_len + 1);
+
+		snprintf(response, response_len, "HTTP/1.1 200 OK\r\n"
 			"Content-Type: text/html\r\n"
 			"Content-Length: %d\r\n"
 			"\r\n"
@@ -135,7 +139,9 @@ int main() {
 			, body_len, body);
 
 		
-		if (send(client_fd, response, sizeof(response) - 1, 0) < 0) {
+		printf("[*] Response: %s\n", response);
+
+		if (send(client_fd, response, response_len - 1, 0) < 0) {
 			perror("[!] Error al enviar datos al cliente");
 		} else {
 			printf("[*] Respuesta enviada al cliente\n");
