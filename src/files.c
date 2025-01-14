@@ -23,6 +23,9 @@ char *read_file(char *route) {
 
 	file_route = get_file_route(route);
 	file = fopen(file_route, "r");
+	if (file == NULL) {
+		return (NULL);
+	}
 
 	while ((character = fgetc(file)) != EOF) {
 		++content_size;
@@ -35,6 +38,7 @@ char *read_file(char *route) {
 
 		file_content = temp;
 		file_content[content_size++] = character;
+		printf("file_content: %s\n", file_content);
 	}
 	
 	if (file_content != NULL) {

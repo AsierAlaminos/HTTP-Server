@@ -45,7 +45,7 @@ char *read_request(int client_fd) {
 		request[request_lenght] = '\0';
 	}
 
-	return request;
+	return (request);
 }
 
 char *get_route(char *request) {
@@ -55,7 +55,7 @@ char *get_route(char *request) {
 	strtok(request_splitted, " ");
 	char *path = strtok(NULL, " ");
 
-	return path;
+	return (path);
 }
 
 int main() {
@@ -93,7 +93,7 @@ int main() {
 			perror("accept failed");
 			continue;
 		}
-		printf("[*] Cliente conectado\n");
+		printf("\n\n[*] Cliente conectado\n");
 
 		char *client_request = read_request(client_fd);
 
@@ -101,6 +101,10 @@ int main() {
 
 		char *route = get_route(client_request);
 		printf("[*] Route: %s\n", route);
+
+		if (route == NULL) {
+			route = "/index.html";
+		}
 
 		char *response = handle_request(route);
 
