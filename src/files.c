@@ -1,13 +1,13 @@
 #include "../include/server.h"
-#include <cstdlib>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 
 char *get_file_route(char *route) {
 	int len_route = strlen("test_files");
-	len_route += strlen(route);
+	len_route += strlen(route) + 1;
 	char *file_route;
+
+	file_route = (char *)malloc(len_route);
 
 	snprintf(file_route, len_route, "test_files%s", route);
 

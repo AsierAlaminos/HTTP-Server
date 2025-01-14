@@ -9,11 +9,15 @@
 #include <netinet/in.h>
 #include <unistd.h>
 
-const int PORT = 8080;
-
 void error(char *msg);
 
 char *read_file(char *route);
 int exist_file(char *route);
+
+char *handle_request(char *file_route);
+
+char *get_status_code(int code);
+char *create_content(char *content_type, char *content);
+char *predefinied_content(char *status_code);
 
 #endif

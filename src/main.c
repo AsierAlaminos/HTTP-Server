@@ -5,31 +5,31 @@ void error(char *msg) {
 	exit(EXIT_FAILURE);
 }
 
-char *read_response(int client_fd) {
+char *read_request(int client_fd) {
 	char buffer[1024] = "";
 	memset(buffer, 0, sizeof(buffer));
 	int bytes_received;
-	char *response = NULL;
-	int response_lenght = 0;
+	char *request = NULL;
+	int request_lenght = 0;
 
 	while ((bytes_received = recv(client_fd, buffer, sizeof(buffer), 0)) > 0) {
 		buffer[bytes_received] = '\0';
-		if (response == NULL) {
-			response = malloc(bytes_received + 1);
-			if (response == NULL) {
+		if (request == NULL) {
+			request = malloc(bytes_received + 1);
+			if (request == NULL) {
 				perror("[!] Error malloc");
 				return NULL;
 			}
-			memcpy(response, buffer, bytes_received);
-			response_lenght = bytes_received;
+			memcpy(request, buffer, bytes_received);
+			request_lenght = bytes_received;
 		} else {
-			response = realloc(response, response_lenght + bytes_received + 1);
-			if (response == NULL) {
+			request = realloc(request, request_lenght + bytes_received + 1);
+			if (request == NULL) {
 				perror("[!] Error malloc");
 				return NULL;
 			}
-			memcpy(response + response_lenght, buffer, bytes_received);
-			response_lenght += bytes_received;
+			memcpy(request + request_lenght, buffer, bytes_received);
+			request_lenght += bytes_received;
 		}
 
 		if (strstr(buffer, "\r\n\r\n") != NULL) {
@@ -41,11 +41,11 @@ char *read_response(int client_fd) {
 		perror("[!] Error al leer datos del cliente");
 	}
 
-	if (response != NULL) {
-		response[response_lenght] = '\0';
+	if (request != NULL) {
+		request[request_lenght] = '\0';
 	}
 
-	return response;
+	return request;
 }
 
 char *get_route(char *request) {
@@ -60,6 +60,7 @@ char *get_route(char *request) {
 
 int main() {
 	int socket_fd;
+	int port = 8080;
 	struct sockaddr_in server_addr;
 
 	socket_fd = socket(AF_INET, SOCK_STREAM, 0);
@@ -71,17 +72,17 @@ int main() {
 
 	server_addr.sin_family = AF_INET;
 	server_addr.sin_addr.s_addr = INADDR_ANY;
-	server_addr.sin_port = htons(PORT);
+	server_addr.sin_port = htons(port);
 
 	if (bind(socket_fd, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0) {
 		error("socket failed");
 	}
-	printf("[*] Socket enlazado al puerto %d\n", PORT);
+	printf("[*] Socket enlazado al puerto %d\n", port);
 
 	if (listen(socket_fd, 10) < 0) {
 		error("listen failed");
 	}
-	printf("[*] Servidor escuchando en el puerto %d\n", PORT);
+	printf("[*] Servidor escuchando en el puerto %d\n", port);
 
 	while (1) {
 		struct sockaddr_in client_addr;
@@ -94,54 +95,19 @@ int main() {
 		}
 		printf("[*] Cliente conectado\n");
 
-		char *client_request = read_response(client_fd);
+		char *client_request = read_request(client_fd);
 
 		printf("[*] Request:\n%s\n", client_request);
 
 		char *route = get_route(client_request);
 		printf("[*] Route: %s\n", route);
 
-		int body_len = 0;
-
-		body_len += strlen("<html lang='en'><head><metacharset='UTF-8'><metaname='viewport'content='width=device-width,initial-scale=1.0'><metahttp-equiv='X-UA-Compatible'content='ie=edge'><title>HTML5Boilerplate</title><linkrel='stylesheet'href='style.css'></head><body><h1>%s</h1></body></html>");
-		body_len += strlen(route);
-
-		char *body = (char *)malloc(body_len + 1);
-
-
-		snprintf(body, body_len, "<html lang='en'>"
-			"<head>"
-			"<metacharset='UTF-8'>"
-			"<metaname='viewport'content='width=device-width,initial-scale=1.0'>"
-			"<metahttp-equiv='X-UA-Compatible'content='ie=edge'>"
-			"<title>Server HTTP</title>"
-			"</head>"
-			"<body>"
-			"<h1>%s</h1>"
-			"</body>"
-			"</html>"
-			, route);
-
-
-		printf("body: %s\nbody_len: %d\n\n", body, body_len);
-		int response_len = 0;
-
-		response_len += strlen("HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: %d\r\n\r\n");
-		response_len += body_len;
-
-		char *response = (char *)malloc(response_len + 1);
-
-		snprintf(response, response_len, "HTTP/1.1 200 OK\r\n"
-			"Content-Type: text/html\r\n"
-			"Content-Length: %d\r\n"
-			"\r\n"
-			"%s"
-			, body_len, body);
+		char *response = handle_request(route);
 
 		
 		printf("[*] Response: %s\n", response);
 
-		if (send(client_fd, response, response_len - 1, 0) < 0) {
+		if (send(client_fd, response, strlen(response) - 1, 0) < 0) {
 			perror("[!] Error al enviar datos al cliente");
 		} else {
 			printf("[*] Respuesta enviada al cliente\n");
@@ -149,6 +115,8 @@ int main() {
 		
 		close(client_fd);
 		printf("[*] Conexión cerrada\n");
+		free(client_request);
+		free(response);
 	}
 
 	close(socket_fd);
