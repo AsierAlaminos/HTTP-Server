@@ -60,7 +60,7 @@ int exist_file(char *route) {
 	if (file == NULL) {
 		return (0);
 	}
-
+	free(file_route);
 	fclose(file);
 	return (1);
 }

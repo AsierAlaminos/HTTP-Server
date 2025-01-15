@@ -1,5 +1,13 @@
 #include "../include/server.h"
 
+
+static volatile int keepRunning = 1;
+
+void cleanup(int signo) {
+	(void)signo;
+	keepRunning = 0;
+}
+
 void error(char *msg) {
 	perror(msg);
 	exit(EXIT_FAILURE);
@@ -63,11 +71,21 @@ int main() {
 	int port = 8080;
 	struct sockaddr_in server_addr;
 
+	struct sigaction sa;
+	sa.sa_handler = cleanup;
+	sa.sa_flags = 0;
+	sigemptyset(&sa.sa_mask);
+	sigaction(SIGINT, &sa, NULL);
+
 	socket_fd = socket(AF_INET, SOCK_STREAM, 0);
 
 	if (socket_fd < 0) {
 		error("socket failed");
 	}
+
+	int opt = 1;
+	setsockopt(socket_fd, SOL_SOCKET, SO_REUSEPORT, &opt, sizeof(opt));
+
 	printf("[*] Socket creado con exito\n");
 
 	server_addr.sin_family = AF_INET;
@@ -84,7 +102,7 @@ int main() {
 	}
 	printf("[*] Servidor escuchando en el puerto %d\n", port);
 
-	while (1) {
+	while (keepRunning) {
 		struct sockaddr_in client_addr;
 		socklen_t client_addr_len = sizeof(client_addr);
 		int client_fd;
@@ -123,6 +141,7 @@ int main() {
 		free(response);
 	}
 
+	printf("[*] Cerrando servidor...");
 	close(socket_fd);
 
 	return (0);

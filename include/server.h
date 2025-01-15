@@ -8,6 +8,8 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <unistd.h>
+#include <errno.h>
+#include <signal.h>
 
 void error(char *msg);
 
@@ -17,7 +19,7 @@ int exist_file(char *route);
 char *handle_request(char *file_route);
 
 char *get_status_code(int code);
-char *create_content(char *response, int response_len, char *content_type, char *content);
+char *create_content(char *status_line, char *content_type, char *content);
 char *predefinied_content(char *status_code);
 
 #endif

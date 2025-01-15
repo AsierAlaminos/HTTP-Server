@@ -36,18 +36,21 @@ char *predefinied_content(char *status_code) {
 	return (get_content(html_template, status_code, content_len + strlen(status_code)));
 }
 
-char *create_content(char *status_line, int status_line_len, char *content_type, char *content) {
+char *create_content(char *status_line, char *content_type, char *content) {
 	int content_len;
+	int response_len;
 	char *buffer;
 	char *response;
 	
-	content_len = snprintf(NULL, 0, "Content-Type: %s\r\nContent-Length: %lu\r\n%s", content_type, strlen(content), content);
-	status_line = realloc(status_line, status_line_len + content_len + 1);
+	content_len = snprintf(NULL, 0, "Content-Type: %s\r\nContent-Length: %lu\r\n\r\n%s", content_type, strlen(content), content);
 	buffer = (char *)malloc(content_len + 1);
 	snprintf(buffer, content_len + 1, "Content-Type: %s\r\nContent-Length: %lu\r\n\r\n%s", content_type, strlen(content), content);
 
-	response = (char *)malloc(content_len + status_line_len + 1);
-	snprintf(response, content_len + status_line_len + 1, "%s\r\n%s", status_line, buffer);
+	response_len = snprintf(NULL, 0, "%s\r\n%s", status_line, buffer) + 1;
+	response = (char *)malloc(response_len);
+	snprintf(response, response_len, "%s\r\n%s", status_line, buffer);
+
+	free(buffer);
 
 	return (response);
 }

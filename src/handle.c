@@ -1,6 +1,4 @@
 #include "../include/server.h"
-#include <stdio.h>
-#include <stdlib.h>
 
 char *handle_request(char *file_route) {
 	char *status_code;
@@ -20,8 +18,9 @@ char *handle_request(char *file_route) {
 	snprintf(status_line, status_line_len, "HTTP/1.1 %s", status_code);
 
 	content = predefinied_content(status_code);
-	response = create_content(status_line, status_line_len, "text/html", content);
+	response = create_content(status_line, "text/html", content);
 	free(content);
+	free(status_line);
 
 	return (response);
 }
