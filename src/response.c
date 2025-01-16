@@ -1,6 +1,4 @@
 #include "../include/server.h"
-#include <stdio.h>
-#include <stdlib.h>
 
 char *get_status_code(int code) {
 	if (code == 200) {

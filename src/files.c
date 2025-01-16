@@ -1,6 +1,7 @@
 #include "../include/server.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 char *get_file_route(char *route) {
 	int len_route = strlen("test_files");
@@ -18,8 +19,7 @@ char *read_file(char *route) {
 	FILE *file;
 	char *file_route;
 	char *file_content = NULL;
-	unsigned long content_size = 0;
-	int character;
+	long content_size = 0;
 
 	file_route = get_file_route(route);
 	file = fopen(file_route, "r");
@@ -27,23 +27,22 @@ char *read_file(char *route) {
 		return (NULL);
 	}
 
-	while ((character = fgetc(file)) != EOF) {
-		++content_size;
-		char *temp = realloc(file_content, content_size + 2);
-		if (temp == NULL) {
-			free(file_content);
-			fclose(file);
-			error("[!] Error al reservar memoria");
-		}
+	char cwd[100];
+	if (getcwd(cwd, sizeof(cwd)) == NULL) {
+		perror("[!] getcwd error");
+	} else {
+		printf("[*] Current directory: %s\n", cwd);
+	}
+	printf("file_route: %s\n", file_route);
 
-		file_content = temp;
-		file_content[content_size++] = character;
-		printf("file_content: %s\n", file_content);
-	}
-	
-	if (file_content != NULL) {
-		file_content[content_size] = '\0';
-	}
+	fseek(file, 0, SEEK_END);
+	content_size = ftell(file);
+	rewind(file);
+
+	file_content = (char *)malloc(content_size + 1);
+
+	fread(file_content, sizeof(char), content_size, file);
+	file_content[content_size] = '\0';
 
 	fclose(file);
 	return (file_content);
