@@ -6,20 +6,22 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
+#include <sys/stat.h>
 #include <netinet/in.h>
 #include <unistd.h>
 #include <errno.h>
 #include <signal.h>
+#include <fcntl.h>
 
 void error(char *msg);
 
-char *read_file(char *route);
+char *read_file(char *route, char *content_type, char *response, int headers_len, int *response_len);
 int exist_file(char *route);
 
-char *handle_request(char *file_route);
+char *handle_request(char *file_route, int *response_len);
 
 char *get_status_code(int code);
-char *create_content(char *status_line, char *content_type, char *content);
+char *create_content(char *status_line, char *content_type, int *headers_len);
 char *predefinied_content(char *status_code);
 
 #endif

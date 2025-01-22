@@ -1,7 +1,7 @@
 #include "../include/server.h"
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
+#include <string.h>
 
 char *get_file_route(char *route) {
 	int len_route = strlen("test_files");
@@ -15,37 +15,39 @@ char *get_file_route(char *route) {
 	return (file_route);
 }
 
-char *read_file(char *route) {
-	FILE *file;
+char *read_file(char *route, char *content_type, char *response, int headers_len, int *response_len) {
+	int file_fd;
 	char *file_route;
-	char *file_content = NULL;
-	long content_size = 0;
+	char *buffer = NULL;
 
 	file_route = get_file_route(route);
-	file = fopen(file_route, "r");
-	if (file == NULL) {
+	file_fd = open(file_route, O_RDONLY);
+	if (file_fd == -1) {
 		return (NULL);
 	}
 
-	char cwd[100];
-	if (getcwd(cwd, sizeof(cwd)) == NULL) {
-		perror("[!] getcwd error");
-	} else {
-		printf("[*] Current directory: %s\n", cwd);
+	free(file_route);
+
+	struct stat file_stat;
+	fstat(file_fd, &file_stat);
+	int file_size = (int)file_stat.st_size;
+
+	int size_len = snprintf(NULL, 0, "%d\r\n\r\n", file_size);
+	response = realloc(response, headers_len + size_len + file_size + 1);
+	buffer = (char *)malloc(headers_len);
+	memcpy(buffer, response, headers_len);
+	snprintf(response, headers_len + size_len, "%s%d\r\n\r\n", buffer, file_size);
+	*response_len = strlen(response);
+	free(buffer);
+
+	ssize_t bytes_read = read(file_fd, response + *response_len, file_size);
+	*response_len += bytes_read;
+	if (!strstr(content_type, "image")) {
+		response[headers_len + size_len + bytes_read] = '\0';
 	}
-	printf("file_route: %s\n", file_route);
 
-	fseek(file, 0, SEEK_END);
-	content_size = ftell(file);
-	rewind(file);
-
-	file_content = (char *)malloc(content_size + 1);
-
-	fread(file_content, sizeof(char), content_size, file);
-	file_content[content_size] = '\0';
-
-	fclose(file);
-	return (file_content);
+	close(file_fd);
+	return (response);
 }
 
 int exist_file(char *route) {
@@ -59,7 +61,7 @@ int exist_file(char *route) {
 	if (file == NULL) {
 		return (0);
 	}
-	free(file_route);
+free(file_route);
 	fclose(file);
 	return (1);
 }

@@ -1,4 +1,6 @@
 #include "../include/server.h"
+#include <stdio.h>
+#include <string.h>
 
 char *get_status_code(int code) {
 	if (code == 200) {
@@ -34,19 +36,20 @@ char *predefinied_content(char *status_code) {
 	return (get_content(html_template, status_code, content_len + strlen(status_code)));
 }
 
-char *create_content(char *status_line, char *content_type, char *content) {
-	int content_len;
+char *create_content(char *status_line, char *content_type, int *headers_len) {
+	int body_len;
 	int response_len;
 	char *buffer;
 	char *response;
 	
-	content_len = snprintf(NULL, 0, "Content-Type: %s\r\nContent-Length: %lu\r\n\r\n%s", content_type, strlen(content), content);
-	buffer = (char *)malloc(content_len + 1);
-	snprintf(buffer, content_len + 1, "Content-Type: %s\r\nContent-Length: %lu\r\n\r\n%s", content_type, strlen(content), content);
+	body_len = snprintf(NULL, 0, "Content-Type: %s\r\nContent-Length: ", content_type);
+	buffer = (char *)malloc(body_len + 1);
+	snprintf(buffer, body_len + 1, "Content-Type: %s\r\nContent-Length: ", content_type);
 
 	response_len = snprintf(NULL, 0, "%s\r\n%s", status_line, buffer) + 1;
 	response = (char *)malloc(response_len);
 	snprintf(response, response_len, "%s\r\n%s", status_line, buffer);
+	*headers_len = response_len;
 
 	free(buffer);
 

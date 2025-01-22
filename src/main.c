@@ -1,4 +1,5 @@
 #include "../include/server.h"
+#include <string.h>
 
 
 static volatile int keepRunning = 1;
@@ -118,18 +119,17 @@ int main() {
 		printf("[*] Request:\n%s\n", client_request);
 
 		char *route = get_route(client_request);
-		printf("[*] Route: %s\n", route);
 
-		if (route == NULL) {
+		if (route == NULL || !strcmp(route, "/")) {
 			route = "/index.html";
 		}
 
-		char *response = handle_request(route);
+		int response_len = 0;
+		char *response = handle_request(route, &response_len);
 
-		
 		printf("[*] Response: %s\n", response);
 
-		if (send(client_fd, response, strlen(response) - 1, 0) < 0) {
+		if (send(client_fd, response, response_len, 0) < 0) {
 			perror("[!] Error al enviar datos al cliente");
 		} else {
 			printf("[*] Respuesta enviada al cliente\n");
@@ -141,7 +141,7 @@ int main() {
 		free(response);
 	}
 
-	printf("[*] Cerrando servidor...");
+	printf("[*] Cerrando servidor...\n");
 	close(socket_fd);
 
 	return (0);
