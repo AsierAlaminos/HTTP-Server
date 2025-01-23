@@ -1,5 +1,6 @@
 #include "../include/server.h"
-#include <string.h>
+#include <pthread.h>
+#include <stdlib.h>
 
 
 static volatile int keepRunning = 1;
@@ -106,39 +107,17 @@ int main() {
 	while (keepRunning) {
 		struct sockaddr_in client_addr;
 		socklen_t client_addr_len = sizeof(client_addr);
-		int client_fd;
+		int *client_fd = malloc(sizeof(int));
 
-		if ((client_fd = accept(socket_fd, (struct sockaddr *)&client_addr, &client_addr_len)) < 0) {
+		if ((*client_fd = accept(socket_fd, (struct sockaddr *)&client_addr, &client_addr_len)) < 0) {
 			perror("accept failed");
 			continue;
 		}
 		printf("\n\n[*] Cliente conectado\n");
 
-		char *client_request = read_request(client_fd);
-
-		printf("[*] Request:\n%s\n", client_request);
-
-		char *route = get_route(client_request);
-
-		if (route == NULL || !strcmp(route, "/")) {
-			route = "/index.html";
-		}
-
-		int response_len = 0;
-		char *response = handle_request(route, &response_len);
-
-		printf("[*] Response: %s\n", response);
-
-		if (send(client_fd, response, response_len, 0) < 0) {
-			perror("[!] Error al enviar datos al cliente");
-		} else {
-			printf("[*] Respuesta enviada al cliente\n");
-		}
-		
-		close(client_fd);
-		printf("[*] Conexión cerrada\n");
-		free(client_request);
-		free(response);
+		pthread_t ptid;
+		pthread_create(&ptid, NULL, handle_request, (void *)client_fd);
+		pthread_detach(ptid);
 	}
 
 	printf("[*] Cerrando servidor...\n");

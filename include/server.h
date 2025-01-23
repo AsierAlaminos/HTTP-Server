@@ -12,13 +12,16 @@
 #include <errno.h>
 #include <signal.h>
 #include <fcntl.h>
+#include <pthread.h>
 
 void error(char *msg);
+char *read_request(int client_fd);
+char *get_route(char *request);
 
 char *read_file(char *route, char *content_type, char *response, int headers_len, int *response_len);
 int exist_file(char *route);
 
-char *handle_request(char *file_route, int *response_len);
+void *handle_request(void *arg);
 
 char *get_status_code(int code);
 char *create_content(char *status_line, char *content_type, int *headers_len);

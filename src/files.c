@@ -43,7 +43,7 @@ char *read_file(char *route, char *content_type, char *response, int headers_len
 	ssize_t bytes_read = read(file_fd, response + *response_len, file_size);
 	*response_len += bytes_read;
 	if (!strstr(content_type, "image")) {
-		response[headers_len + size_len + bytes_read] = '\0';
+		response[*response_len] = '\0';
 	}
 
 	close(file_fd);

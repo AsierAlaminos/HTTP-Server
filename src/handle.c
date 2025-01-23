@@ -38,15 +38,28 @@ char *handle_type(char *file_route) {
 	}
 
 	return ("application/octet-stream");
-} 
+}
 
-char *handle_request(char *file_route, int *response_len) {
+void *handle_request(void *arg) {
 	char *status_code;
 	char *response;
 	char *status_line;
 	char *content_type;
 	int headers_len;
 	int status_line_len;
+	int response_len = 0;
+	int client_fd = *((int *)arg);
+
+
+	char *client_request = read_request(client_fd);
+
+	printf("[*] Request:\n%s\n", client_request);
+
+	char *file_route = get_route(client_request);
+
+	if (file_route == NULL || !strcmp(file_route, "/")) {
+		file_route = "/index.html";
+	}
 
 	if (!exist_file(file_route)) {
 		status_code = get_status_code(404);
@@ -60,14 +73,24 @@ char *handle_request(char *file_route, int *response_len) {
 	snprintf(status_line, status_line_len, "HTTP/1.1 %s", status_code);
 
 	response = create_content(status_line, content_type, &headers_len);
-	response = read_file(file_route, content_type, response, headers_len, response_len);
-	//TODO: crear dos funciones, una para crear los headers y otra para el contenido
-	//el content se crea directamente con read_file, se pasa el response y el buffer
-	//es el response, en vez de usar una variable externa se escribe directamente
-	//en la memoria reservada de response
-	//se puede dar un tamaño para los headers y luego aumentarlo en read_file
-	//con un realloc
+	response = read_file(file_route, content_type, response, headers_len, &response_len);
 	free(status_line);
 
-	return (response);
+	printf("[*] Response: %s\n", response);
+
+	if (send(client_fd, response, response_len, 0) < 0) {
+		perror("[!] Error al enviar datos al cliente");
+	} else {
+		printf("[*] Respuesta enviada al cliente\n");
+	}
+	close(client_fd);
+	free(response);
+	free(client_request);
+	printf("[*] Conexión cerrada\n");
+
+	return (NULL);
 }
+
+//TODO
+//Gestionar el resto de codigos de estado (400, 404, etc).
+//
