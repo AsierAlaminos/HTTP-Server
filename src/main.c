@@ -1,7 +1,5 @@
 #include "../include/server.h"
-#include <pthread.h>
-#include <stdlib.h>
-
+#include <stdio.h>
 
 static volatile int keepRunning = 1;
 
@@ -22,13 +20,14 @@ char *read_request(int client_fd) {
 	char *request = NULL;
 	int request_lenght = 0;
 
+	printf("[*] fuera del bucle read_request\n");
 	while ((bytes_received = recv(client_fd, buffer, sizeof(buffer), 0)) > 0) {
 		buffer[bytes_received] = '\0';
 		if (request == NULL) {
 			request = malloc(bytes_received + 1);
 			if (request == NULL) {
 				perror("[!] Error malloc");
-				return NULL;
+				return (NULL);
 			}
 			memcpy(request, buffer, bytes_received);
 			request_lenght = bytes_received;
@@ -36,7 +35,7 @@ char *read_request(int client_fd) {
 			request = realloc(request, request_lenght + bytes_received + 1);
 			if (request == NULL) {
 				perror("[!] Error malloc");
-				return NULL;
+				return (NULL);
 			}
 			memcpy(request + request_lenght, buffer, bytes_received);
 			request_lenght += bytes_received;
@@ -45,7 +44,10 @@ char *read_request(int client_fd) {
 		if (strstr(buffer, "\r\n\r\n") != NULL) {
 			break;
 		}
+		printf("[*] bucle read_request\n");
 	}
+
+	printf("[*] final del bucle read_request\n");
 
 	if (bytes_received == 0) {
 		perror("[!] Error al leer datos del cliente");
@@ -59,7 +61,6 @@ char *read_request(int client_fd) {
 }
 
 char *get_route(char *request) {
-
 	char *request_splitted = strtok(request, "\n");
 	
 	strtok(request_splitted, " ");
@@ -113,7 +114,8 @@ int main() {
 			perror("accept failed");
 			continue;
 		}
-		printf("\n\n[*] Cliente conectado\n");
+		char *client_ip = inet_ntoa(client_addr.sin_addr);
+		printf("\n\n[*] Cliente conectado: %s\n", client_ip);
 
 		pthread_t ptid;
 		pthread_create(&ptid, NULL, handle_request, (void *)client_fd);

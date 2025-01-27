@@ -23,6 +23,7 @@ char *read_file(char *route, char *content_type, char *response, int headers_len
 	file_route = get_file_route(route);
 	file_fd = open(file_route, O_RDONLY);
 	if (file_fd == -1) {
+		free(file_route);
 		return (NULL);
 	}
 
@@ -59,9 +60,10 @@ int exist_file(char *route) {
 	file = fopen(file_route, "r");
 
 	if (file == NULL) {
+		free(file_route);
 		return (0);
 	}
-free(file_route);
+	free(file_route);
 	fclose(file);
 	return (1);
 }
