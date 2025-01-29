@@ -1,5 +1,5 @@
 #include "../include/server.h"
-#include <stdio.h>
+#include <string.h>
 
 typedef struct MimeType {
 	char *extension;
@@ -53,12 +53,10 @@ void *handle_request(void *arg) {
 	int response_len = 0;
 	int client_fd = *((int *)arg);
 
-	printf("[*] handle");
 	char *client_request = read_request(client_fd);
 	if (client_request == NULL) {
-		printf("[!] NULL");
 		response = predefinied_content(create_status_header(500), get_status_code(500));
-		printf("[*]response: %s\n", response);
+		printf("[*] Response: %s\n", response);
 		send_response(client_fd, response, strlen(response));
 		close(client_fd);
 		free(response);
@@ -67,23 +65,27 @@ void *handle_request(void *arg) {
 
 	printf("[*] Request:\n%s\n", client_request);
 
-	printf("[*] pre_file_route");
 	char *file_route = get_route(client_request);
 
-	printf("[*] file_route");
 	if (file_route == NULL || !strcmp(file_route, "/")) {
 		file_route = "/index.html";
 	}
 
-	if (!exist_file(file_route)) {
-		printf("[*] !exist_file()");
+	char *decoded = url_decode(file_route);
+	int dt = directory_traversal(decoded, strlen(decoded));
+	printf("[*] decoded: %s / dt: %d\n", decoded, dt);
+
+	if (!exist_file(decoded)) {
 		response = predefinied_content(create_status_header(404), get_status_code(400));
+		response_len = strlen(response);
+	} else if(directory_traversal(decoded, strlen(decoded)) == -1) {
+		response = predefinied_content(create_status_header(403), get_status_code(403));
 		response_len = strlen(response);
 	} else {
 		status_line = create_status_header(200);
-		content_type = handle_type(file_route);
+		content_type = handle_type(decoded);
 		response = create_header(status_line, content_type, &headers_len);
-		response = read_file(file_route, content_type, response, headers_len, &response_len);
+		response = read_file(decoded, content_type, response, headers_len, &response_len);
 		free(status_line);
 	}
 
@@ -92,6 +94,7 @@ void *handle_request(void *arg) {
 	send_response(client_fd, response, response_len);
 
 	close(client_fd);
+	free(decoded);
 	free(response);
 	free(client_request);
 	printf("[*] Conexión cerrada\n");

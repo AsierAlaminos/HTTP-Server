@@ -2,7 +2,7 @@ NAME = server
 CCFLAGS = -Wall -Wextra -Werror
 FSANITIZE = -fsanitize=address
 
-FILES = src/main.c src/files.c src/handle.c src/response.c
+FILES = src/main.c src/files.c src/handle.c src/response.c src/utils.c
 
 OBJS = $(FILES:.c=.o)
 

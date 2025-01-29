@@ -4,7 +4,7 @@ char *create_status_header(int code) {
 	char *status_line;
 	char *status_code;
 	int status_line_len;
-	char *template = "HTTP/1.1\r\n%s";
+	char *template = "HTTP/1.1 %s";
 
 	status_code = get_status_code(code);
 	status_line_len = snprintf(NULL, 0, template, status_code) + 1;
@@ -18,9 +18,11 @@ char *get_status_code(int code) {
 	if (code == 200) {
 		return ("200 OK");
 	} else if (code == 400) {
-		return ("400 BAD REQUEST");
+		return ("400 Bad Request");
 	} else if (code == 404) {
-		return ("404 NOT FOUND");
+		return ("404 Not Found");
+	} else if (code == 403) {
+		return ("403 Forbidden");
 	}
 
 	return (NULL);

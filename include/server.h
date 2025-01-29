@@ -14,6 +14,7 @@
 #include <fcntl.h>
 #include <pthread.h>
 #include <arpa/inet.h>
+#include <ctype.h>
 
 void error(char *msg);
 char *read_request(int client_fd);
@@ -28,5 +29,8 @@ char *create_status_header(int code);
 char *get_status_code(int code);
 char *create_header(char *status_line, char *content_type, int *headers_len);
 char *predefinied_content(char *headers, char *status_code);
+
+char *url_decode(char *url);
+int directory_traversal(char *url, size_t url_len);
 
 #endif

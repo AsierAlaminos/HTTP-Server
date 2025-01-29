@@ -1,5 +1,4 @@
 #include "../include/server.h"
-#include <stdio.h>
 
 static volatile int keepRunning = 1;
 
@@ -20,7 +19,6 @@ char *read_request(int client_fd) {
 	char *request = NULL;
 	int request_lenght = 0;
 
-	printf("[*] fuera del bucle read_request\n");
 	while ((bytes_received = recv(client_fd, buffer, sizeof(buffer), 0)) > 0) {
 		buffer[bytes_received] = '\0';
 		if (request == NULL) {
@@ -44,10 +42,7 @@ char *read_request(int client_fd) {
 		if (strstr(buffer, "\r\n\r\n") != NULL) {
 			break;
 		}
-		printf("[*] bucle read_request\n");
 	}
-
-	printf("[*] final del bucle read_request\n");
 
 	if (bytes_received == 0) {
 		perror("[!] Error al leer datos del cliente");
